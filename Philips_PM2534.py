@@ -7,18 +7,21 @@ import time
 import pyvisa
 
 _logging = logging.getLogger(__name__)
-_GPIBAddr = 16
+
+_GPIBAddr = 10
+_SerialNr = "Test"
 _ReadTrys = 10
 
 sys.path.append(os.path.abspath('../python-vxi11-server/'))
 import vxi11_server as vxi11
 
 class GPIB_Handler():
-    def __init__(self, gpibAddr = _GPIBAddr, resMan = pyvisa.ResourceManager()) -> None:
-        self.rm = resMan # pyvisa.ResourceManager()
+    def __init__(self, gpibAddr = _GPIBAddr, serialNr_in = _SerialNr, resMan = pyvisa.ResourceManager()) -> None:
+        self.rm = resMan
         self.inst = self.rm.open_resource("GPIB0::" + str(gpibAddr) + "::INSTR")
+        self.serialNr = serialNr_in
         pass
-        
+    
     def readGPIB(self):
         respons = ""
         for i in range(_ReadTrys):
@@ -29,20 +32,23 @@ class GPIB_Handler():
                 time.sleep(.001)
                 pass
         return respons
-
-    
-    def gpib_read(self):
-        return self.gpib_read_raw().decode('utf-8')
     
     def handleCommand(self, cmd):
         
         cmdList = cmd.split(";")
         
         for cmdVal in cmdList:
-            if cmdVal.endswith("?"):
+            
+        
+            if cmdVal.startswith(":"):
+                cmdVal = cmdVal[1:]
+            
+            if cmdVal == "*IDN?":
+                respons = (self.inst.query("ID?").strip() + ", Sn.: " + self.serialNr)
+            elif cmdVal.endswith("?"):
                 respons = self.inst.query(cmdVal)
             else:
-                self.gpib_write(cmd)
+                self.inst.write(cmdVal)
                 respons = ""
                 
         return respons

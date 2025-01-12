@@ -6,16 +6,14 @@ from  threading import Timer
 import time
 import pyvisa
 
-_logging = logging.getLogger(__name__)
-
-_GPIBAddr = "16"
-
-_ReadTrys = 10
-
-_SerialNr = "Test"
-
 sys.path.append(os.path.abspath('../python-vxi11-server/'))
 import vxi11_server as vxi11
+
+_logging = logging.getLogger(__name__)
+
+_GPIBAddr = 16
+_ReadTrys = 10
+_SerialNr = "Test"
 
 class GPIB_Handler():
     
@@ -42,11 +40,12 @@ class GPIB_Handler():
                       "D", 
                       ]
     
-    def __init__(self, gpibAddr = _GPIBAddr, resMan = pyvisa.ResourceManager()) -> None:
-        self.rm = resMan # pyvisa.ResourceManager()
-        self.inst = self.rm.open_resource("GPIB0::" + gpibAddr + "::INSTR") # self.rm.open_resource("GPIB0::" + _GPIBAddr + "::INSTR")
+    def __init__(self, gpibAddr = _GPIBAddr, serialNr_in = _SerialNr, resMan = pyvisa.ResourceManager()) -> None:
+        self.rm = resMan
+        self.inst = self.rm.open_resource("GPIB0::" + str(gpibAddr) + "::INSTR")
+        self.serialNr = serialNr_in
         pass
-    
+        
     def readGPIB(self):
         respons = ""
         for i in range(_ReadTrys):
@@ -56,8 +55,7 @@ class GPIB_Handler():
             except:
                 time.sleep(.001)
                 pass
-        return respons
-        
+        return respons    
     
     def handleCommand(self, cmd):
         respons = ""
@@ -69,41 +67,34 @@ class GPIB_Handler():
             respons = ""
         else:
             respons = self.scpiTranslate(cmd)
-        
-        # if cmd.startswith("*IDN?"):
-        #    respons = "GPIB_Ethernet_Bridge Simple Test Inst"
-        # elif cmd.startswith("SRQTIMER"):
-        #     t= Timer(10, self.signal_srq )
-        #     t.start()
-        #     self._addResponse("OK")
-        #else:
-        #    _logging.debug("unsupported vxi11-cmd %s",cmd)
-        #    respons = "Something Else"
         return respons
     
     def scpiTranslate(self, cmd):
         cmd = cmd.upper()
         respons = ""
         
+        if cmd[0] == ":":
+            cmd = cmd[1:]
+        
         if cmd == "*IDN?":
             respons = self.scpiIDN(cmd)
-        elif cmd.startswith(":FUNC"):
+        elif cmd.startswith("FUNC"):
             respons = self.scpiFUNC(cmd)
-        elif cmd.startswith(":RANGE"):
+        elif cmd.startswith("RANGE"):
             respons = self.scpiRANGE(cmd)
-        elif cmd.startswith(":RATE"):
+        elif cmd.startswith("RATE"):
             respons = self.scpiRATE(cmd)
-        elif cmd.startswith(":ZERO"):
+        elif cmd.startswith("ZERO"):
             respons = self.scpiZERO(cmd)
-        elif cmd.startswith(":FILTER"):
+        elif cmd.startswith("FILTER"):
             respons = self.scpiFILTER(cmd)
-        elif cmd.startswith(":MULTIPLEX"):
+        elif cmd.startswith("MULTIPLEX"):
             respons = self.scpiMULTIPLEX(cmd)
-        elif cmd.startswith(":DELAY"):
+        elif cmd.startswith("DELAY"):
             respons = self.scpiDELAY(cmd)
-        elif cmd.startswith(":CAL"):
+        elif cmd.startswith("CAL"):
             respons = self.scpiCAL(cmd)
-        elif cmd.startswith(":DISP"):
+        elif cmd.startswith("DISP"):
             respons = self.scpiDISP(cmd)
                     
                     
@@ -115,9 +106,11 @@ class GPIB_Handler():
         res = self.readGPIB()
         
         if res.startswith("195A"):
-            respons = "Keithley 195A Sn.: " + _SerialNr
+            respons = "Keithley 195A Sn.: " + self.serialNr
         elif res.startswith("195"):
-            respons = "Keithley 195 Sn.: " + _SerialNr
+            respons = "Keithley 195 Sn.: " + self.serialNr
+        else:
+            respons = "Unknown, set Sn.: " + self.serialNr
             
         return respons
         
@@ -128,7 +121,7 @@ class GPIB_Handler():
             self.inst.write("G0X")
             res = ""
             res = self.readGPIB()
-            if res.startswith(tuple(["N", "0", "Z"])):
+            if res.startswith(tuple(["N", "O", "Z"])):
                 respons = res[1] + res[2] + res[3]
             elif res.startswith("DEG"):
                 respons = "DEG" + res[3]
@@ -526,31 +519,31 @@ class GPIB_Handler():
         
         # Reading Delay not feasable since pyVisa or LinuxGPIB muches the data
         
-        # if cmd == ":DELAY?":
-        #     self.inst.write("U0X")
-        #     res = ""
-        #     res = self.readGPIB()
-        #     if res.startswith("195A"):
-        #         res = res.replace("195A ", "")
-        #     elif res.startswith("195"):
-        #         res = res.replace("195 ", "")
-        #     rangeID = res[9] + res[10]
+        if cmd == ":DELAY?":
+            pass
+            #self.inst.write("U0X")
+            #res = ""
+            #res = self.readGPIB_raw()
+            #resDec = res.decode("ASCII")
+            #print(res)
+            #print(resDec)
+            #if resDec.startswith("195A"):
+            #    rangeID = [res[14], res[15]]
+            #elif resDec.startswith("195"):
+            #    rangeID = [res[13], res[14]]
+            #print(rangeID)
+            #print("{:08b}".format(rangeID[0]) + " ; " + "{:08b}".format(rangeID[1]))
+          
+            #binary_list = []
+            #binary_list.append(bin(ord(res[9]))[2:].zfill(8))
+            #binary_list.append(bin(ord(res[10]))[2:].zfill(8))
+          
+            #respons = str(binary_list) + " :: " + rangeID
+          
             
-        #     binary_list = []
-        #     binary_list.append(bin(ord(res[9]))[2:].zfill(8))
-        #     binary_list.append(bin(ord(res[10]))[2:].zfill(8))
-            
-        #     respons = str(binary_list) + " :: " + rangeID
-            
-        #     # match rangeID:
-        #     #     case "0":
-        #     #         respons = "ENABLED"
-        #     #     case "1":
-        #     #         respons = "DISABLED"
-            
-        # else:
-        cmd = cmd.replace(":DELAY ", "")
-        self.inst.write("W"+ cmd + "X")
+        else:
+            cmd = cmd.replace(":DELAY ", "")
+            self.inst.write("W"+ cmd + "X")
                     
         return respons
     
