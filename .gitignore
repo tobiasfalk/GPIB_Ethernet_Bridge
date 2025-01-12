@@ -1,1 +1,5 @@
 __pycache__/*
+__pycache__/Keithley192A_Multi.cpython-311.pyc
+__pycache__/Keithley192A.cpython-311.pyc
+__pycache__/Philips_PM2534_Multi.cpython-311.pyc
+__pycache__/SimpleGPIBForward.cpython-311.pyc
