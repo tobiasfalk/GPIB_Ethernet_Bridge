@@ -11,33 +11,37 @@ import vxi11_server as vxi11
 
 _logging = logging.getLogger(__name__)
 
-_GPIBAddr = 16
+_GPIBAddr = 1
 _ReadTrys = 10
 _SerialNr = "Test"
 
 class GPIB_Handler():
     
-    knowmCmdsQuerry = ["U0", "U1", "U2", "U3", "U4", "U5", 
-                       "G0", "G1", "G2", "G3", "G4", "G5", 
+    knowmCmdsQuerry = ["B0", "B1", "B2", "B3", "B4", # Reading Source
+                       "L3", # Default Conditions or Calibration
+                       "U0", "U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8", "U9", # Status Words
                        ]
-    knowmCmdsWrite = ["F0", "F1", "F2", "F3", "F4", "F5", "F6", 
-                      "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", 
-                      "S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", 
-                      "Z0", "Z1", 
-                      "P1", "P2", "P3", 
-                      "T1", "T2", "T3", "T4", "T5", "T6", "T7", 
-                      "K0", "K1", 
-                      "A0", "A1", 
-                      "W", 
-                      # "M0", "M1", "M2", "M4", "M8", "M16", "M32", # SRQ Not implemented
-                      "Q", 
-                      "B0", "B1", 
-                      "V", 
-                      "L1", 
-                      "J", 
-                      "Y", 
-                      "H", 
-                      "D", 
+    knowmCmdsWrite = ["A0", "A1", "A2" # Display Intensity
+                      "C0", "C1", "C2", # Zero Check and Correct
+                      "D", # Display
+                      "F0", "F1", # V/I Ohms
+                      "G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", # Data Format
+                      "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12", "H13", "H14", "H15", "H16", "H17", # Hit COntroll
+                      "J1", "J2", # Self-Test
+                      "K0", "K1", "K2", "K3", #EOI and Bus Hold-off
+                      "L1", "L2", "L4", "L5", "L6", # Default Conditions or Calibration
+                      # "M0", "M1", "M2", "M4", "M8", "M16", "M32", "M128", # SRQ Not implemented
+                      "N", # Data Store
+                      "O0", "O1", # Source Operate
+                      "P0", "P1", "P2", "P3", # Filters
+                      "Q", # Interval
+                      "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", # Range
+                      "S0", "S1", # Integration
+                      "T0", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", # Trigger
+                      "V", # Voltage source
+                      "W", # Delay
+                      "Y0", "Y1", "Y2", "Y3", "Y4", # Terminator
+                      "Z0", "Z1", "Z2", "Z3", # Relative
                       ]
     
     def __init__(self, gpibAddr = _GPIBAddr, serialNr_in = _SerialNr, resMan = pyvisa.ResourceManager()) -> None:
@@ -78,22 +82,20 @@ class GPIB_Handler():
         
         if cmd == "*IDN?":
             respons = self.scpiIDN(cmd)
-        elif cmd.startswith("FUNC"):
-            respons = self.scpiFUNC(cmd)
         elif cmd.startswith("RANGE"):
             respons = self.scpiRANGE(cmd)
-        elif cmd.startswith("RATE"):
-            respons = self.scpiRATE(cmd)
-        elif cmd.startswith("ZERO"):
-            respons = self.scpiZERO(cmd)
-        elif cmd.startswith("FILTER"):
-            respons = self.scpiFILTER(cmd)
-        elif cmd.startswith("MULTIPLEX"):
-            respons = self.scpiMULTIPLEX(cmd)
-        elif cmd.startswith("DELAY"):
-            respons = self.scpiDELAY(cmd)
-        elif cmd.startswith("CAL"):
-            respons = self.scpiCAL(cmd)
+        # elif cmd.startswith("RATE"):
+        #     respons = self.scpiRATE(cmd)
+        # elif cmd.startswith("ZERO"):
+        #     respons = self.scpiZERO(cmd)
+        # elif cmd.startswith("FILTER"):
+        #     respons = self.scpiFILTER(cmd)
+        # elif cmd.startswith("MULTIPLEX"):
+        #     respons = self.scpiMULTIPLEX(cmd)
+        # elif cmd.startswith("DELAY"):
+        #     respons = self.scpiDELAY(cmd)
+        # elif cmd.startswith("CAL"):
+        #     respons = self.scpiCAL(cmd)
         elif cmd.startswith("DISP"):
             respons = self.scpiDISP(cmd)
                     
@@ -102,47 +104,16 @@ class GPIB_Handler():
     
     def scpiIDN(self, cmd):
         respons = ""
-        self.inst.write("U0X")
+        self.inst.write("U2X")
         res = self.readGPIB()
         
-        if res.startswith("195A"):
-            respons = "Keithley 195A Sn.: " + self.serialNr
-        elif res.startswith("195"):
-            respons = "Keithley 195 Sn.: " + self.serialNr
+        print(res)
+        
+        if res.startswith("486") or res.startswith("487"):
+            respons = "Keithley " + res.strip() + " Sn.: " + self.serialNr
         else:
             respons = "Unknown, set Sn.: " + self.serialNr
             
-        return respons
-        
-    def scpiFUNC(self, cmd):
-        respons = ""
-        
-        if cmd == ":FUNC?":
-            self.inst.write("G0X")
-            res = ""
-            res = self.readGPIB()
-            if res.startswith(tuple(["N", "O", "Z"])):
-                respons = res[1] + res[2] + res[3]
-            elif res.startswith("DEG"):
-                respons = "DEG" + res[3]
-            
-        else:
-            cmd = cmd.replace("FUNC ", "")
-            if cmd == "DCV":
-                self.inst.write("F0X")
-            elif cmd == "ACV":
-                self.inst.write("F1X")
-            elif cmd == "OHM":
-                self.inst.write("F2X")
-            elif cmd == "DCA":
-                self.inst.write("F3X")
-            elif cmd == "ACA":
-                self.inst.write("F4X")
-            elif cmd == "DEGF":
-                self.inst.write("F5X")
-            elif cmd == "DEGC":
-                self.inst.write("F6X")
-                    
         return respons
         
     def scpiRANGE(self, cmd):
@@ -155,213 +126,60 @@ class GPIB_Handler():
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
-            if res.startswith("195A"):
-                res = res.replace("195A ", "")
-            elif res.startswith("195"):
-                res = res.replace("195 ", "")
-            rangeID = res[2]
-        
-        if cmd.startswith("DCV"):
-            if cmd.endswith("?"):
-                match rangeID:
-                    case "0":
-                        respons = "Auto"
-                    case "1":
-                        respons = "20mV"
-                    case "2":
-                        respons = "200mV"
-                    case "3":
-                        respons = "2V"
-                    case "4":
-                        respons = "20V"
-                    case "5":
-                        respons = "200V"
-                    case "6":
-                        respons = "1000V"
-                    case "7":
-                        respons = "1000V"
-            else:
-                cmd = cmd.replace("DCV ", "")
-                match cmd:
-                    case "AUTO":
-                        self.inst.write("R0X")
-                    case "20MV":
-                        self.inst.write("R1X")
-                    case "200MV":
-                        self.inst.write("R2X")
-                    case "2V":
-                        self.inst.write("R3X")
-                    case "20V":
-                        self.inst.write("R4X")
-                    case "200V":
-                        self.inst.write("R5X")
-                    case "1000V":
-                        self.inst.write("R6X")
-        elif cmd.startswith("ACV"):
-            if cmd.endswith("?"):
-                match rangeID:
-                    case "0":
-                        respons = "Auto"
-                    case "1":
-                        respons = "20mV"
-                    case "2":
-                        respons = "200mV"
-                    case "3":
-                        respons = "2V"
-                    case "4":
-                        respons = "20V"
-                    case "5":
-                        respons = "200V"
-                    case "6":
-                        respons = "700V"
-                    case "7":
-                        respons = "700V"
-            else:
-                cmd = cmd.replace("ACV ", "")
-                match cmd:
-                    case "AUTO":
-                        self.inst.write("R0X")
-                    case "20MV":
-                        self.inst.write("R1X")
-                    case "200MV":
-                        self.inst.write("R2X")
-                    case "2V":
-                        self.inst.write("R3X")
-                    case "20V":
-                        self.inst.write("R4X")
-                    case "200V":
-                        self.inst.write("R5X")
-                    case "700V":
-                        self.inst.write("R6X")
-        elif cmd.startswith("DCA"):
-            if cmd.endswith("?"):
-                match rangeID:
-                    case "0":
-                        respons = "Auto"
-                    case "1":
-                        respons = "20uA"
-                    case "2":
-                        respons = "200uA"
-                    case "3":
-                        respons = "2mA"
-                    case "4":
-                        respons = "20mA"
-                    case "5":
-                        respons = "200mA"
-                    case "6":
-                        respons = "2A"
-                    case "7":
-                        respons = "2A"
-            else:
-                cmd = cmd.replace("DCA ", "")
-                match cmd:
-                    case "AUTO":
-                        self.inst.write("R0X")
-                    case "20uA":
-                        self.inst.write("R1X")
-                    case "200uA":
-                        self.inst.write("R2X")
-                    case "2mA":
-                        self.inst.write("R3X")
-                    case "20mA":
-                        self.inst.write("R4X")
-                    case "200mA":
-                        self.inst.write("R5X")
-                    case "2A":
-                        self.inst.write("R6X")
-        elif cmd.startswith("ACA"):
-            if cmd.endswith("?"):
-                match rangeID:
-                    case "0":
-                        respons = "Auto"
-                    case "1":
-                        respons = "20uA"
-                    case "2":
-                        respons = "200uA"
-                    case "3":
-                        respons = "2mA"
-                    case "4":
-                        respons = "20mA"
-                    case "5":
-                        respons = "200mA"
-                    case "6":
-                        respons = "2A"
-                    case "7":
-                        respons = "2A"
-            else:
-                cmd = cmd.replace("ACA ", "")
-                match cmd:
-                    case "AUTO":
-                        self.inst.write("R0X")
-                    case "200uA":
-                        self.inst.write("R2X")
-                    case "2mA":
-                        self.inst.write("R3X")
-                    case "20mA":
-                        self.inst.write("R4X")
-                    case "200mA":
-                        self.inst.write("R5X")
-                    case "2A":
-                        self.inst.write("R6X")
-        elif cmd.startswith("OHM"):
-            if cmd.endswith("?"):
-                match rangeID:
-                    case "0":
-                        respons = "Auto"
-                    case "1":
-                        respons = "20Ohm"
-                    case "2":
-                        respons = "200Ohm"
-                    case "3":
-                        respons = "2kOhm"
-                    case "4":
-                        respons = "20kOhm"
-                    case "5":
-                        respons = "200kOhm"
-                    case "6":
-                        respons = "2MegOhm"
-                    case "7":
-                        respons = "20MegOhm"
-            else:
-                cmd = cmd.replace("OHM ", "")
-                match cmd:
-                    case "AUTO":
-                        self.inst.write("R0X")
-                    case "20OHM":
-                        self.inst.write("R1X")
-                    case "200OHM":
-                        self.inst.write("R2X")
-                    case "2KOHM":
-                        self.inst.write("R3X")
-                    case "20KOHM":
-                        self.inst.write("R4X")
-                    case "200KOHM":
-                        self.inst.write("R5X")
-                    case "2MEGOHM":
-                        self.inst.write("R6X")
-                    case "20MEGOHM":
-                        self.inst.write("R7X")
-        elif cmd.startswith("DEG"):
-            cmd = cmd.replace("DEG ", "")
-            if cmd.endswith("?"):
-                if rangeID == "0":
-                    pass
-                elif rangeID == "1":
-                    respons = "<230°C"
-                elif rangeID  in ["2", "3", "4", "5", "6", "7"]:
-                    respons = ">230°C"
             
-            if cmd == "LOW":
-                self.inst.write("R1X")
-            elif cmd == "HIGH":
-                self.inst.write("R2X")
+            res = res[32:35]
+            
+            match res[2]:
+                case "1":
+                    respons = "2nA"
+                case "2":
+                    respons = "20nA"
+                case "3":
+                    respons = "200nA"
+                case "4":
+                    respons = "2uA"
+                case "5":
+                    respons = "20uA"
+                case "6":
+                    respons = "200uA"
+                case "7":
+                    respons = "2mA"
+                    
+            
+            
+            match res[1]:
+                case "0":
+                    respons = respons + " Auto Disabled"
+                case "1":
+                    respons = respons + " Auto Enabled"
+        else:
+            match cmd:
+                case "ENAUTO":
+                    self.inst.write("R0X")
+                case "2NV":
+                    self.inst.write("R1X")
+                case "20NV":
+                    self.inst.write("R2X")
+                case "200NV":
+                    self.inst.write("R3X")
+                case "2UV":
+                    self.inst.write("R4X")
+                case "20UV":
+                    self.inst.write("R5X")
+                case "200UV":
+                    self.inst.write("R6X")
+                case "2MV":
+                    self.inst.write("R7X")
+                case "DISAUTO":
+                    self.inst.write("R10X")
             pass
+        
         return respons
     
     def scpiRATE(self, cmd):
         respons = ""
         
-        if cmd == ":RATE?":
+        if cmd == "RATE?":
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
@@ -423,7 +241,7 @@ class GPIB_Handler():
     def scpiZERO(self, cmd):
         respons = ""
         
-        if cmd == ":ZERO?":
+        if cmd == "ZERO?":
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
@@ -451,7 +269,7 @@ class GPIB_Handler():
     def scpiFILTER(self, cmd):
         respons = ""
         
-        if cmd == ":FILTER?":
+        if cmd == "FILTER?":
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
@@ -487,7 +305,7 @@ class GPIB_Handler():
     def scpiMULTIPLEX(self, cmd):
         respons = ""
         
-        if cmd == ":MULTIPLEX?":
+        if cmd == "MULTIPLEX?":
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
@@ -517,7 +335,7 @@ class GPIB_Handler():
         
         # Reading Delay not feasable since pyVisa or LinuxGPIB muches the data
         
-        if cmd == ":DELAY?":
+        if cmd == "DELAY?":
             pass
             #self.inst.write("U0X")
             #res = ""
@@ -548,7 +366,7 @@ class GPIB_Handler():
     def scpiCAL(self, cmd):
         respons = ""
         
-        if cmd == ":CAL?":
+        if cmd == "CAL?":
             self.inst.write("U5X")
             respons = self.readGPIB()
             
@@ -564,8 +382,8 @@ class GPIB_Handler():
     
     def scpiDISP(self, cmd):
         respons = ""
-            
-        if cmd == ":DISP:CLEAR":
+        
+        if cmd == "DISP:CLEAR":
             self.inst.write("DX")
         else:
             cmd = cmd.replace("DISP ", "")

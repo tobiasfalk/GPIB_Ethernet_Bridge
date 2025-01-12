@@ -8,7 +8,7 @@ import pyvisa
 
 _logging = logging.getLogger(__name__)
 
-_GPIBAddr = "16"
+_GPIBAddr = "1"
 
 sys.path.append(os.path.abspath('../python-vxi11-server/'))
 import vxi11_server as vxi11

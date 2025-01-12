@@ -69,6 +69,21 @@ class GPIB_Ethernet_Bridge(vxi11.InstrumentDevice):
                     respons = respons + ", " + res.strip() + " " + _SerialNr[n]
                 self._addResponse(respons)
                 
+            elif cmdVal == ":CH?" or cmdVal == ":CHANNEL?":
+                respons = "Philips "
+                for n in range(len(_GPIBAddr)):
+                    res = _gpibHandlers[n].handleCommand("ID?")
+                    respons = respons + ", " + res.strip() + " " + _SerialNr[n]
+                    _gpibHandlers[n].handleCommand("DSP OFF")
+                    _gpibHandlers[n].handleCommand("TXT CH_" + str(n))
+                self._addResponse(respons)
+                    
+                time.sleep(10)
+                    
+                for n in range(len(_GPIBAddr)):
+                    _gpibHandlers[n].handleCommand("DX")
+                    
+                
             elif not (cmdVal.startswith(":CH") or cmdVal.startswith(":CHANNEL")):
                 self._addResponse(_gpibHandlers[0].handleCommand(cmdVal))
             elif cmdVal.startswith(":CH") and not cmdVal.startswith(":CHANNEL"):

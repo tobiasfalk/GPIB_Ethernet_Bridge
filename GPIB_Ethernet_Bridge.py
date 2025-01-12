@@ -14,7 +14,8 @@ import vxi11_server as vxi11
 #from Keithley192A import *
 #from Keithley192A_Multi import *
 #from Philips_PM2534 import *
-from Philips_PM2534_Multi import *
+#from Philips_PM2534_Multi import *
+from Keithley487 import *
 
 _logging = logging.getLogger(__name__)
 

@@ -73,6 +73,23 @@ class GPIB_Ethernet_Bridge(vxi11.InstrumentDevice):
                         respons = respons + ",195 " + _SerialNr[n]
                 self._addResponse(respons)
                 
+            elif cmdVal == ":CH?" or cmdVal == ":CHANNEL?":
+                respons = "Keithley "
+                for n in range(len(_GPIBAddr)):
+                    res = _gpibHandlers[n].handleCommand("U0X")
+                    
+                    if res.startswith("195A"):
+                        respons = respons + ",195A " + _SerialNr[n]
+                    elif res.startswith("195"):
+                        respons = respons + ",195 " + _SerialNr[n]
+                    _gpibHandlers[n].handleCommand("D  CH "+ str(n) + "   X")
+                self._addResponse(respons)
+                    
+                time.sleep(10)
+                    
+                for n in range(len(_GPIBAddr)):
+                    _gpibHandlers[n].handleCommand("DX")
+                
             elif not (cmdVal.startswith(":CH") or cmdVal.startswith(":CHANNEL")):
                 self._addResponse(_gpibHandlers[0].handleCommand(cmdVal))
             elif cmdVal.startswith(":CH") and not cmdVal.startswith(":CHANNEL"):
