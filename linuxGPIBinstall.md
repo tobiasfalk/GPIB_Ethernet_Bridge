@@ -1,5 +1,5 @@
 
-# install basics
+# install basics(one may need to run each comand of the .sh file seperate)
 ./installGPIB.sh
 
 # change the default configuration file to use board_type = "gpib_bitbang"

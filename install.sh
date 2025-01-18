@@ -11,6 +11,8 @@ sudo chown root:root /etc/systemd/system/GPIB_Ethernet_Bridge.service
 sudo chmod 644 /etc/systemd/system/GPIB_Ethernet_Bridge.service
 
 systemctl daemon-reload
+systemctl enable rpcbind
+systemctl start rpcbind
 systemctl enable GPIB_Ethernet_Bridge.service
 systemctl stop GPIB_Ethernet_Bridge.service
 systemctl start GPIB_Ethernet_Bridge.service

@@ -6,6 +6,7 @@
 # Human readable name of the unit
 Description=GPIB Ethernet Brideg, Python based
 
+Requires=rpcbind.service
 
 [Service]
 
