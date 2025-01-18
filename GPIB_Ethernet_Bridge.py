@@ -4,8 +4,9 @@ import signal
 import logging
 from  threading import Timer
 import time
+import systemd.daemon
 
-sys.path.append(os.path.abspath('../python-vxi11-server/'))
+sys.path.append(os.path.abspath('/opt/python-vxi11-server/'))
 import vxi11_server as vxi11
 
 #from SimpleTestInst import *
@@ -14,8 +15,8 @@ import vxi11_server as vxi11
 #from Keithley192A import *
 #from Keithley192A_Multi import *
 #from Philips_PM2534 import *
-#from Philips_PM2534_Multi import *
-from Keithley487 import *
+from Philips_PM2534_Multi import *
+#from Keithley487 import *
 
 _logging = logging.getLogger(__name__)
 
@@ -27,6 +28,8 @@ def signal_handler(signal, frame):
         
 
 if __name__ == '__main__':
+
+    
     logging.basicConfig(level=logging.DEBUG)
     _logging = logging.getLogger(__name__)
 
@@ -38,6 +41,9 @@ if __name__ == '__main__':
     instr_server = vxi11.InstrumentServer(GPIB_Ethernet_Bridge)
 
     instr_server.listen()
+
+    # Notifying systemd when the Service is Ready
+    systemd.daemon.notify('READY=1')
 
     # sleep (or do foreground work) while the Instrument threads do their job
     while True:

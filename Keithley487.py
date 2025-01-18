@@ -84,20 +84,26 @@ class GPIB_Handler():
             respons = self.scpiIDN(cmd)
         elif cmd.startswith("RANGE"):
             respons = self.scpiRANGE(cmd)
-        # elif cmd.startswith("RATE"):
-        #     respons = self.scpiRATE(cmd)
-        # elif cmd.startswith("ZERO"):
-        #     respons = self.scpiZERO(cmd)
-        # elif cmd.startswith("FILTER"):
-        #     respons = self.scpiFILTER(cmd)
-        # elif cmd.startswith("MULTIPLEX"):
-        #     respons = self.scpiMULTIPLEX(cmd)
-        # elif cmd.startswith("DELAY"):
-        #     respons = self.scpiDELAY(cmd)
+        elif cmd.startswith("MEAS"):
+            respons = self.scpiMEAS(cmd)
+        elif cmd.startswith("RATE"):
+            respons = self.scpiRATE(cmd)
+        elif cmd.startswith("ZERO"):
+            respons = self.scpiZERO(cmd)
+        elif cmd.startswith("FILTER"):
+            respons = self.scpiFILTER(cmd)
+        elif cmd.startswith("DELAY"):
+            respons = self.scpiDELAY(cmd)
         # elif cmd.startswith("CAL"):
         #     respons = self.scpiCAL(cmd)
         elif cmd.startswith("DISP"):
             respons = self.scpiDISP(cmd)
+        elif cmd.startswith("INTDISP"):
+            respons = self.scpiINTDISP(cmd)
+        elif cmd.startswith("SOURCE"):
+            respons = self.scpiSOURCE(cmd)
+        elif cmd.startswith("OHMS"):
+            respons = self.scpiOHMS(cmd)
                     
                     
         return respons
@@ -116,9 +122,24 @@ class GPIB_Handler():
             
         return respons
         
+    def scpiMEAS(self, cmd):
+        respons = ""
+        cmd = cmd.replace("MEAS ", "")
+        
+        rangeID = ""
+        
+        if cmd.endswith("?"):
+            self.inst.write("B0X")
+            res = ""
+            res = self.readGPIB()
+            
+            respons = res
+        
+        return respons
+    
     def scpiRANGE(self, cmd):
         respons = ""
-        cmd = cmd.replace("RANGE", "")
+        cmd = cmd.replace("RANGE ", "")
         
         rangeID = ""
         
@@ -156,19 +177,19 @@ class GPIB_Handler():
             match cmd:
                 case "ENAUTO":
                     self.inst.write("R0X")
-                case "2NV":
+                case "2NA":
                     self.inst.write("R1X")
-                case "20NV":
+                case "20NA":
                     self.inst.write("R2X")
-                case "200NV":
+                case "200NA":
                     self.inst.write("R3X")
-                case "2UV":
+                case "2UA":
                     self.inst.write("R4X")
-                case "20UV":
+                case "20UA":
                     self.inst.write("R5X")
-                case "200UV":
+                case "200UA":
                     self.inst.write("R6X")
-                case "2MV":
+                case "2MA":
                     self.inst.write("R7X")
                 case "DISAUTO":
                     self.inst.write("R10X")
@@ -178,63 +199,31 @@ class GPIB_Handler():
     
     def scpiRATE(self, cmd):
         respons = ""
+        cmd = cmd.replace("RATE ", "")
         
-        if cmd == "RATE?":
+        rangeID = ""
+        
+        if cmd.endswith("?"):
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
-            if res.startswith("195A"):
-                res = res.replace("195A ", "")
-            elif res.startswith("195"):
-                res = res.replace("195 ", "")
-            rangeID = res[6]
             
-            match rangeID:
+            res = res[35:37]
+            
+            match res[1]:
                 case "0":
-                    respons = "3.33ms"
+                    respons = "Fast"
                 case "1":
-                    respons = "PLC1"
-                case "2":
-                    respons = "PLC2"
-                case "3":
-                    respons = "PLC4"
-                case "4":
-                    respons = "PLC8"
-                case "5":
-                    respons = "PLC16"
-                case "6":
-                    respons = "100ms1"
-                case "7":
-                    respons = "100ms2"
-                case "8":
-                    respons = "100ms4"
-                case "9":
-                    respons = "100ms8"
+                    respons = "LineCycle"
             
             
             
         else:
             cmd = cmd.replace("RATE ", "")
-            if cmd == "3.33MS":
+            if cmd == "FAST":
                 self.inst.write("S0X")
-            elif cmd == "PLC1":
+            elif cmd == "LINECYCLE":
                 self.inst.write("S1X")
-            elif cmd == "PLC2":
-                self.inst.write("S2X")
-            elif cmd == "PLC4":
-                self.inst.write("S3X")
-            elif cmd == "PLC8":
-                self.inst.write("S4X")
-            elif cmd == "PLC16":
-                self.inst.write("S5X")
-            elif cmd == "100MS1":
-                self.inst.write("S6X")
-            elif cmd == "100MS2":
-                self.inst.write("S7X")
-            elif cmd == "100MS4":
-                self.inst.write("S8X")
-            elif cmd == "100MS8":
-                self.inst.write("S9X")
                     
         return respons
     
@@ -245,13 +234,10 @@ class GPIB_Handler():
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
-            if res.startswith("195A"):
-                res = res.replace("195A ", "")
-            elif res.startswith("195"):
-                res = res.replace("195 ", "")
-            rangeID = res[8]
             
-            match rangeID:
+            res = res[7:9]
+            
+            match res[1]:
                 case "0":
                     respons = "DISABLED"
                 case "1":
@@ -260,9 +246,11 @@ class GPIB_Handler():
         else:
             cmd = cmd.replace("ZERO ", "")
             if cmd == "DIS" or cmd == "DISABLED":
-                self.inst.write("Z0X")
+                self.inst.write("C0X")
             elif cmd == "ENA" or cmd == "ENABLED":
-                self.inst.write("Z1X")
+                self.inst.write("C1X")
+            elif cmd == "ENA_R" or cmd == "ENABLED_RUN":
+                self.inst.write("C2X")
                     
         return respons
     
@@ -273,60 +261,29 @@ class GPIB_Handler():
             self.inst.write("U0X")
             res = ""
             res = self.readGPIB()
-            if res.startswith("195A"):
-                res = res.replace("195A ", "")
-            elif res.startswith("195"):
-                res = res.replace("195 ", "")
-            rangeID = res[15]
             
-            match rangeID:
+            res = res[30:32]
+            
+            match res[1]:
                 case "0":
-                    respons = "DISABLED"
+                    respons = "BOTH DISABLED"
                 case "1":
-                    respons = "64RSA"
+                    respons = "DIGITAL ENABLED, ANALOG DISABLED"
                 case "2":
-                    respons = "32RSA"
+                    respons = "DIGITAL DISABLED, ANALOG ENABLED"
                 case "3":
-                    respons = "8RSA"
+                    respons = "BOTH ENABLED"
             
         else:
             cmd = cmd.replace("FILTER ", "")
             if cmd == "DIS" or cmd == "DISABLED":
                 self.inst.write("P0X")
-            elif cmd == "64RSA":
+            elif cmd == "DIG_ENA_ANA_DIS":
                 self.inst.write("P1X")
-            elif cmd == "32RSA":
+            elif cmd == "DIG_DIS_ANA_ENA":
                 self.inst.write("P2X")
-            elif cmd == "8RSA":
-                self.inst.write("P3X")
-                    
-        return respons
-    
-    def scpiMULTIPLEX(self, cmd):
-        respons = ""
-        
-        if cmd == "MULTIPLEX?":
-            self.inst.write("U0X")
-            res = ""
-            res = self.readGPIB()
-            if res.startswith("195A"):
-                res = res.replace("195A ", "")
-            elif res.startswith("195"):
-                res = res.replace("195 ", "")
-            rangeID = res[11]
-            
-            match rangeID:
-                case "0":
-                    respons = "ENABLED"
-                case "1":
-                    respons = "DISABLED"
-            
-        else:
-            cmd = cmd.replace("MULTIPLEX ", "")
-            if cmd == "DIS" or cmd == "DISABLED":
-                self.inst.write("A1X")
             elif cmd == "ENA" or cmd == "ENABLED":
-                self.inst.write("A0X")
+                self.inst.write("P3X")
                     
         return respons
     
@@ -336,26 +293,10 @@ class GPIB_Handler():
         # Reading Delay not feasable since pyVisa or LinuxGPIB muches the data
         
         if cmd == "DELAY?":
-            pass
-            #self.inst.write("U0X")
-            #res = ""
-            #res = self.readGPIB_raw()
-            #resDec = res.decode("ASCII")
-            #print(res)
-            #print(resDec)
-            #if resDec.startswith("195A"):
-            #    rangeID = [res[14], res[15]]
-            #elif resDec.startswith("195"):
-            #    rangeID = [res[13], res[14]]
-            #print(rangeID)
-            #print("{:08b}".format(rangeID[0]) + " ; " + "{:08b}".format(rangeID[1]))
-          
-            #binary_list = []
-            #binary_list.append(bin(ord(res[9]))[2:].zfill(8))
-            #binary_list.append(bin(ord(res[10]))[2:].zfill(8))
-          
-            #respons = str(binary_list) + " :: " + rangeID
-          
+            #pass
+            self.inst.write("U5X")
+            res = ""
+            respons = self.readGPIB()
             
         else:
             cmd = cmd.replace("DELAY ", "")
@@ -389,6 +330,117 @@ class GPIB_Handler():
             cmd = cmd.replace("DISP ", "")
             self.inst.write("D"+ cmd + "X")
                     
+        return respons
+    
+    def scpiINTDISP(self, cmd):
+        respons = ""
+        cmd = cmd.replace("INTDISP ", "")
+        
+        rangeID = ""
+        
+        if cmd.endswith("?"):
+            self.inst.write("U0X")
+            res = ""
+            res = self.readGPIB()
+            
+            res = res[3:5]
+            
+            match res[1]:
+                case "0":
+                    respons = "Normal"
+                case "1":
+                    respons = "Dim"
+                case "2":
+                    respons = "Off"
+        else:
+            match cmd:
+                case "NORMAL":
+                    self.inst.write("A0X")
+                case "DIM":
+                    self.inst.write("A1X")
+                case "OFF":
+                    self.inst.write("A2X")
+                
+            pass
+        return respons
+    
+    def scpiSOURCE(self, cmd):
+        respons = ""
+        cmd = cmd.replace("SOURCE:", "")
+        
+        rangeID = ""
+        
+        if cmd.endswith("?"):
+            self.inst.write("U0X")
+            resOp = ""
+            resOp = self.readGPIB()
+            
+            resOp = resOp[28:30]
+            
+            print(resOp)
+            
+            match resOp[1]:
+                case "0":
+                    respons = "Standby"
+                case "1":
+                    respons = "Operate"
+                    
+            self.inst.write("U8X")
+            resVs = ""
+            resVs = self.readGPIB()
+            
+            respons = respons + " " + resVs
+            
+        else:
+            if cmd.startswith("SET"):
+                cmd = cmd.replace("SET ", "")
+                self.inst.write("V" + cmd + "X")
+            elif cmd.startswith("OP") or cmd.startswith("OPERATE"):
+                cmd = cmd.replace("OP ", "")
+                cmd = cmd.replace("OPERATE ", "")
+                match cmd:
+                    case "STD":
+                        self.inst.write("O0X")
+                    case "STANDBY":
+                        self.inst.write("O0X")
+                    case "OPE":
+                        self.inst.write("O1X")
+                    case "OPERATE":
+                        self.inst.write("O1X")
+                
+            pass
+        return respons
+    
+    def scpiOHMS(self, cmd):
+        respons = ""
+        cmd = cmd.replace("OHMS ", "")
+        
+        rangeID = ""
+        
+        if cmd.endswith("?"):
+            self.inst.write("U0X")
+            res = ""
+            res = self.readGPIB()
+            
+            res = res[9:11]
+            
+            match res[1]:
+                case "1":
+                    respons = "Enabled"
+                case "0":
+                    respons = "Disabled"
+        else:
+            match cmd:
+                case "ENABLED":
+                    self.inst.write("F1X")
+                case "ENA":
+                    self.inst.write("F1X")
+                case "DISABLED":
+                    self.inst.write("F0X")
+                case "DIS":
+                    self.inst.write("F0X")
+                
+            pass
         return respons
     
 def create_GPIB_Handler():

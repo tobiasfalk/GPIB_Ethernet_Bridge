@@ -82,6 +82,8 @@ class GPIB_Handler():
             respons = self.scpiFUNC(cmd)
         elif cmd.startswith("RANGE"):
             respons = self.scpiRANGE(cmd)
+        elif cmd.startswith("MEAS"):
+            respons = self.scpiMEAS(cmd)
         elif cmd.startswith("RATE"):
             respons = self.scpiRATE(cmd)
         elif cmd.startswith("ZERO"):
@@ -114,6 +116,21 @@ class GPIB_Handler():
             
         return respons
         
+    def scpiMEAS(self, cmd):
+        respons = ""
+        cmd = cmd.replace("MEAS ", "")
+        
+        rangeID = ""
+        
+        if cmd.endswith("?"):
+            self.inst.write("G0X")
+            res = ""
+            res = self.readGPIB()
+            
+            respons = res
+        
+        return respons
+    
     def scpiFUNC(self, cmd):
         respons = ""
         
