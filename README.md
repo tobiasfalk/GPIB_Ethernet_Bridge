@@ -9,3 +9,6 @@ For the following Devicecs a SCPI translater is avalible
 
 This is based on the usage of the [RaspberyPi GPIB Shield ](http://elektronomikon.org/)
 
+It uses the [Python VXI11 Server](https://github.com/coburnw/python-vxi11-server)
+
+And the SystemD file is based on the instruction from [torfsen](https://github.com/torfsen/python-systemd-tutorial)
