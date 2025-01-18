@@ -1,0 +1,10 @@
+[Unit]
+Description=GPIB Configure
+
+After=network.target
+
+[Service]
+ExecStart=/opt/gpibConf.sh
+
+[Install]
+WantedBy=multi-user.target
