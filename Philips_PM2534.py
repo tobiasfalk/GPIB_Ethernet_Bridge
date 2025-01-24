@@ -44,7 +44,7 @@ class GPIB_Handler():
                 cmdVal = cmdVal[1:]
             
             if cmdVal == "*IDN?":
-                respons = (self.inst.query("ID?").strip() + ", Sn.: " + self.serialNr)
+                respons = self.scpiIDN(cmdVal)# (self.inst.query("ID?").strip() + ", Sn.: " + self.serialNr)
             elif cmdVal.endswith("?"):
                 respons = self.inst.query(cmdVal)
             else:
@@ -53,6 +53,21 @@ class GPIB_Handler():
                 
         return respons
     
+    
+    def scpiIDN(self, cmd):
+        respons = ""
+        res = self.inst.query("ID?").strip()
+        splitRes = res.split("S")
+        
+        print(res)
+        
+        if res.startswith("PM2534"):
+            # <company name>, <model number>, <serial number>, <firmware revision>
+            respons = "Philips, " + splitRes[0].strip() + ", " + self.serialNr + ", " + splitRes[1].strip()
+        else:
+            respons = "-, -, " + self.serialNr + ", -"
+            
+        return respons
     
 def create_GPIB_Handler():
     if not '_gpibHandler' in locals():

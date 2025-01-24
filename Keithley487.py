@@ -113,12 +113,11 @@ class GPIB_Handler():
         self.inst.write("U2X")
         res = self.readGPIB()
         
-        print(res)
-        
         if res.startswith("486") or res.startswith("487"):
-            respons = "Keithley " + res.strip() + " Sn.: " + self.serialNr
+            # <company name>, <model number>, <serial number>, <firmware revision>
+            respons = "Keithley, " + res.strip()[:3] + ", " + self.serialNr + ", " + res.strip()[3:]
         else:
-            respons = "Unknown, set Sn.: " + self.serialNr
+            respons = "-, -, " + self.serialNr + ", -"
             
         return respons
         

@@ -63,15 +63,17 @@ class GPIB_Ethernet_Bridge(vxi11.InstrumentDevice):
         for cmdVal in cmdList:
             cmdVal = cmdVal.upper()
             if cmdVal == "*IDN?":
-                respons = "Keithley "
-                for n in range(len(_GPIBAddr)):
-                    res = _gpibHandlers[n].handleCommand("U0X")
-                    
-                    if res.startswith("195A"):
-                        respons = respons + ",195A " + _SerialNr[n]
-                    elif res.startswith("195"):
-                        respons = respons + ",195 " + _SerialNr[n]
+                respons = self.scpiIDN(cmdVal)
                 self._addResponse(respons)
+                # respons = "Keithley "
+                # for n in range(len(_GPIBAddr)):
+                #     res = _gpibHandlers[n].handleCommand("U0X")
+                    
+                #     if res.startswith("195A"):
+                #         respons = respons + ",195A " + _SerialNr[n]
+                #     elif res.startswith("195"):
+                #         respons = respons + ",195 " + _SerialNr[n]
+                # self._addResponse(respons)
                 
             elif cmdVal == ":CH?" or cmdVal == ":CHANNEL?":
                 respons = "Keithley "
@@ -103,6 +105,38 @@ class GPIB_Ethernet_Bridge(vxi11.InstrumentDevice):
                 cmdVal = cmdVal.replace(channel, "")
                 self._addResponse(_gpibHandlers[int(channel)].handleCommand(cmdVal))
         return error
+    
+    def scpiIDN(self, cmd):
+        respons = ""
+        idStr = ""
+        fwStr = ""
+        snStr = ""
+        
+        for n in range(len(_GPIBAddr)):
+            
+            if idStr != "":
+                idStr = idStr + " & "
+                fwStr = fwStr + " & "
+                snStr = snStr + " & "
+            
+            resId = _gpibHandlers[n].handleCommand("U0X").strip()
+            
+            if resId.startswith("195A"):
+                idStr = idStr + "195A"
+                fwStr = fwStr + "-"
+                snStr = snStr + _SerialNr[n].strip()
+            elif resId.startswith("195"):
+                idStr = idStr + "195"
+                fwStr = fwStr + "-"
+                snStr = snStr + _SerialNr[n].strip()
+            else:
+                idStr = idStr + "-"
+                fwStr = fwStr + "-"
+                snStr = snStr + _SerialNr[n]
+            
+        # <company name>, <model number>, <serial number>, <firmware revision>
+        respons = "Keithley, " + idStr + ", " + snStr + ", " + fwStr
+        return respons
 
 
     # def signal_srq(self):

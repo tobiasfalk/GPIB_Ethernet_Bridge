@@ -108,11 +108,11 @@ class GPIB_Handler():
         res = self.readGPIB()
         
         if res.startswith("195A"):
-            respons = "Keithley 195A Sn.: " + self.serialNr
+            respons = "Keithley, 195A, " + self.serialNr + ", -"
         elif res.startswith("195"):
-            respons = "Keithley 195 Sn.: " + self.serialNr
+            respons = "Keithley, 195, " + self.serialNr + ", -"
         else:
-            respons = "Unknown, set Sn.: " + self.serialNr
+            respons = "-, -, " + self.serialNr + ", -"
             
         return respons
         

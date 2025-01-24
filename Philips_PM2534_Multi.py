@@ -63,25 +63,24 @@ class GPIB_Ethernet_Bridge(vxi11.InstrumentDevice):
         for cmdVal in cmdList:
             cmdVal = cmdVal.upper()
             if cmdVal == "*IDN?":
-                respons = "Philips "
-                for n in range(len(_GPIBAddr)):
-                    res = _gpibHandlers[n].handleCommand("ID?")
-                    respons = respons + ", " + res.strip() + " " + _SerialNr[n]
+                respons = self.scpiIDN(cmdVal)
                 self._addResponse(respons)
                 
             elif cmdVal == ":CH?" or cmdVal == ":CHANNEL?":
-                respons = "Philips "
+                respons = self.scpiIDN(cmdVal)
+                self._addResponse(respons)
+                # respons = "Philips "
                 for n in range(len(_GPIBAddr)):
-                    res = _gpibHandlers[n].handleCommand("ID?")
-                    respons = respons + ", " + res.strip() + " " + _SerialNr[n]
+                    # res = _gpibHandlers[n].handleCommand("ID?")
+                    # respons = respons + ", " + res.strip() + " " + _SerialNr[n]
                     _gpibHandlers[n].handleCommand("DSP OFF")
                     _gpibHandlers[n].handleCommand("TXT CH_" + str(n))
-                self._addResponse(respons)
                     
                 time.sleep(10)
                     
                 for n in range(len(_GPIBAddr)):
                     _gpibHandlers[n].handleCommand("DX")
+                    _gpibHandlers[n].handleCommand("DSP ON")
                     
                 
             elif not (cmdVal.startswith(":CH") or cmdVal.startswith(":CHANNEL")):
@@ -97,6 +96,38 @@ class GPIB_Ethernet_Bridge(vxi11.InstrumentDevice):
                 cmdVal = cmdVal.replace(channel, "")
                 self._addResponse(_gpibHandlers[int(channel)].handleCommand(cmdVal))
         return error
+    
+    
+    
+    
+    def scpiIDN(self, cmd):
+        respons = ""
+        idStr = ""
+        fwStr = ""
+        snStr = ""
+        
+        for n in range(len(_GPIBAddr)):
+            
+            if idStr != "":
+                idStr = idStr + " & "
+                fwStr = fwStr + " & "
+                snStr = snStr + " & "
+            
+            resId = _gpibHandlers[n].handleCommand("ID?").strip()
+            splitRes = resId.split("S")
+            
+            if resId.startswith("PM2534"):
+                idStr = idStr + splitRes[0].strip()
+                fwStr = fwStr + splitRes[1].strip()
+                snStr = snStr + _SerialNr[n].strip()
+            else:
+                idStr = idStr + "-"
+                fwStr = fwStr + "-"
+                snStr = snStr + _SerialNr[n]
+            
+        # <company name>, <model number>, <serial number>, <firmware revision>
+        respons = "Philips, " + idStr + ", " + snStr + ", " + fwStr
+        return respons
 
 
     # def signal_srq(self):
